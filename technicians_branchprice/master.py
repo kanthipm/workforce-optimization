@@ -1,16 +1,25 @@
 from gurobipy import Model, GRB, quicksum
 
-#solves the lp using current plans
-def solve_master(patterns, demand):
+def solve_master(patterns, demand, integer=False, forced_values=None):
     model = Model("master")
     model.setParam("OutputFlag", 0)
 
-    x = [model.addVar(obj=1.0, name=f"x_{i}") for i in range(len(patterns))]
+    x = []
+
+    # modified to optionally use integer variables, and apply foced values from branching
+
+    for i in range(len(patterns)):
+        var_type = GRB.INTEGER if integer else GRB.CONTINUOUS
+        x_var = model.addVar(vtype=var_type, obj=1.0, name=f"x_{i}")
+        x.append(x_var)
+
+    if forced_values:
+        for idx, val in forced_values.items():
+            model.addConstr(x[idx] == val, name=f"branch_fix_{idx}")
 
     constraints = {}
     for loc in demand:
         constraints[loc] = model.addConstr(
-            #total hours > demand
             quicksum(patterns[p]["hours"].get(loc, 0) * x[p] for p in range(len(patterns))) >= demand[loc],
             name=f"demand_{loc}"
         )
@@ -18,12 +27,14 @@ def solve_master(patterns, demand):
     tech_set = set(pattern["tech"] for pattern in patterns)
     for tech in tech_set:
         model.addConstr(
-            #total time spent by tech <= availability
             quicksum(patterns[p]["time"] * x[p] for p in range(len(patterns)) if patterns[p]["tech"] == tech) <= patterns[0]["availability"][tech],
             name=f"avail_{tech}"
         )
 
     model.optimize()
-    #extracts dual values from location constraints to use in pricing
-    duals = {loc: constraints[loc].Pi for loc in constraints}
+    if not integer:
+        duals = {loc: constraints[loc].Pi for loc in constraints}
+    else:
+        duals = None  # No duals in integer mode
+
     return model, x, duals

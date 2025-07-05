@@ -12,7 +12,7 @@ def column_generation_loop(data_path):
     availability = data["availability"]
     efficiency = data["efficiency"]
 
-    # Start with one-location-only plans
+    #creating initial plans (with each technician working 10 hours at only one location)
     patterns = []
     for tech in technicians:
         for loc in locations:
@@ -27,6 +27,8 @@ def column_generation_loop(data_path):
             pattern["hours"][loc] = hours
             patterns.append(pattern)
 
+    #for each iteration, solves master lp (using current patters) and generates new patterns using duals from lp
+    #if new patters help, they are added
     iteration = 0
     while True:
         iteration += 1
