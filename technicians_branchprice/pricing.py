@@ -10,11 +10,9 @@ def generate_new_patterns(technicians, locations, availability, efficiency, dual
         y = {loc: model.addVar(vtype=GRB.CONTINUOUS, lb=0, name=f"y_{loc}") for loc in locations}
         a_total = model.addVar(vtype=GRB.CONTINUOUS, lb=0, name="total_hours")
 
-        # Total time used by tech (accounting for efficiency)
         model.addConstr(quicksum(y[loc] / efficiency[tech][loc] for loc in locations) == a_total)
         model.addConstr(a_total <= availability[tech])
 
-        # Objective: maximize dual-weighted contribution
         revenue = quicksum(duals[loc] * y[loc] for loc in locations)
         model.setObjective(revenue, GRB.MAXIMIZE)
         model.optimize()
