@@ -1,4 +1,4 @@
-# Technician Scheduling - Algorithm Practice
+# Workforce Optimization
 
 This repository contains practice code and basic models developed to understand and prepare for implementing column generation and branch-and-price algorithms for technician scheduling.
 
